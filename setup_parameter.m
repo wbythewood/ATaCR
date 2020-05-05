@@ -2,33 +2,130 @@
 
 % path for matlab codes and functions
 addpath ('function');
+javaaddpath('IRIS-WS-2.0.18.jar');
+
+%--- Directory Structure ---%
+
+%Base Directory for Output
+BaseDir = 'X9_test2D/';%''X9_M6.5';
+% location of unpreprocessed matlab files
+NoiseDataDir = strcat(BaseDir,'data/noise_day/'); % output folder for data
 % location of the continuous matlab files for spectral properties
-WORKINGdir = 'NOISETC_CI/DATA/datacache_day_preproc/';
+NoisePreproDir = strcat(BaseDir,'data/noise_day_prepro/');
+% location of unpreprocessed event data
+EventDataDir = strcat(BaseDir,'data/event_data/');
+% location of processed event data
+EventPreproDir = strcat(BaseDir,'data/event_data_prepro/');
+% location of pole zero directory
+PZDir = ''; % leave blank if no PZs
+%PZDir = strcat(BaseDir,'data/PZDir');
 % output directory for spectra
-OUTdir = 'NOISETC_CI/DATA/NOISETC';
- % directory for figure output
-FIGdir = 'NOISETC_CI/FIGURES/NOISETC';
+OUTdir = strcat(BaseDir,'data/NOISETC/');
+% directory for figure output
+FIGdir = strcat(BaseDir,'figures/');
+
+% paths for the event and noise time lists
+evFile = 'config_files/eventtimes_X9test2.txt';
+dayFile = 'config_files/starttimes_X9test2.txt';
 
 
-% information for station
-network = '7D'; 
-stations = textread('./NOISETC_CI/stalist.txt','%s'); 
+%evFile = 'config_files/Events_X9_M6.5.txt';
+%dayFile = 'config_files/starttimes_X9_M6.5.txt.txt';
 
-% Channel Names
-chz_vec = {['HHZ'], ['BHZ'], ['LHZ']}; % list of acceptable names for Z component
-ch1_vec = {['HH1'], ['BH1'], ['LHN'], ['LH1']}; % list of acceptable names for H1 component
-ch2_vec = {['HH2'], ['BH2'], ['LHE'], ['LH2']}; % list of acceptable names for H2 component
-chp_vec = {['HDH'], ['BDH']}; % list of acceptable names for P component
+%--- Data to download ---%
+
+% networks -- still only can do one
+%NetworkNames = '7D';
+NetworkName = 'X9';
+% stations
+%StationNames = {'M07A'};
+%StationNames = {'*'};
+StationNames = textread('config_files/X9_D_stations.txt','%s');
+
+% Response Removal
+% option of removing response from Z component only after corrections have 
+% been applied -- 0 is do not remove response after, 1 is remove response 
+% after correcting
+
+RespAfterFlag = 1;
+
+% Pre-processing high-pass filter
+% this will apply a high pass filter to the raw data
+% useful to remove very long period signals from the data
+FilterBeforeFlag = 1;
+LoPassCorner = 0.005; %Hz
+
+% Channel Names and Corrections
+% in the a_ sections there can only be one vertical channel per station
+% downloaded... maybe I will go back to fix this later. When do we want
+% more than one downloaded... especially if in the b_ sections, it skips if
+% there's more than one component? Just need the flexibility.
+
+% *_vec is the channel names
+% *_resp is whether to remove response for above channels - 0 = no; 1 = yes
+% *_gain is gain correction - multiply data by this number
+% *_hpFilt will apply a high-pass filter -- should only be 1 for _resp=0
+
+% Channel Info
+chz_vec = {'LHZ'};
+chz_resp = [1];
+chz_gain = [1];
+chz_hpFilt = [0];
+
+ch1_vec = {'LH1'};
+ch1_resp = [1];
+ch1_gain = [1];
+ch1_hpFilt = [0];
+
+ch2_vec = {'LH2'};
+ch2_resp = [1];
+ch2_gain = [1];
+ch2_hpFilt = [0];
+
+%chp_vec = {'BXH'};  
+chp_vec = {'BDH'};
+chp_resp = [1];
+chp_gain = [1];
+chp_hpFilt = [0];
+
+% if removing response after, don't need to remove resp before... 
+if RespAfterFlag == 0
+    chz_resp = zeros(size(chz_resp));
+    ch1_resp = zeros(size(ch1_resp));
+    ch2_resp = zeros(size(ch2_resp));
+    chp_resp = zeros(size(chp_resp));
+end  
+
+% Timing Info
+% number of noise days to use for calculating spectra
+Ndays = 4;
+% length of record (seconds) for data download
+NoiseDataLength = 86400;
+EventDataLength = 7200;
+
+%--- Preprocessing ---%
+
+% Sample Rate of seismic data you want -- will downsample to this
+%SampleRate = 5;
+SampleRate = 1; %LHZ is 1 sps
+% preprocessing high-pass filter (if hpFilt above is 1)
+nPoles = 5;
+
+%--- Downloading Specrtral Properties ---%
 
 % Spectral Properties Windowing
-T    = 7200;  % the legnth of each time window, in sec, should match the event data length for corrections
-overlap = 0.3; %fraction of window overlap for spectra calculation
+% the legnth of each time window, in sec, should match the event data 
+% length for corrections
+T    = 7200; 
+
+% fraction of window overlap for spectra calculation
+overlap = 0.3; 
 
 % Quality Control Parameters for Daily Windows
-pb = [0.004 .2]; %pass-band, in Hz
-tolerance = 1.5;
-a_val = 0.05;
-minwin = 10;    % minimum numbers of time window for segment to be accepted
+pb = [0.004 .2]; % pass-band, in Hz
+tolerance = 1.5; % tolerance factor for QC
+a_val = 0.05;    % f-test for QC (1 - a_val = confidence)
+minwin = 10;     % minimum numbers of time window for segment to be accepted
 
 % Tilt orientation - only matters if using transfer functions with the 'H'
 % option, but package needs variables specified to run; leave as default if
