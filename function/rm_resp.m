@@ -1,4 +1,4 @@
-function outtrace = rm_resp(intrace,eventid,lo_corner,npoles,pole_zero_dir)
+function outtrace = rm_resp(intrace,eventid,lo_corner,npoles,pole_zero_dir,idx,nsp)
 %% function to remove instrument response of irisFetch data structure or SACPZ files
 % written by Ge Jin, 2014/02/27, adapted by H Janiszewski
 intrace = intrace(1);
@@ -66,8 +66,36 @@ end
 isfigure = 0;
 
 data = intrace.data;
-data = detrend(data);
-data = flat_hanning_win(1:length(data),data,1,length(data),50);
+
+% wbh debug weird taper issue
+time = linspace(0,intrace.sampleCount/intrace.sampleRate,intrace.sampleCount);
+data = detrend(data); % removes best-fit line
+% if idx == 4
+%     subplot(nsp,1,3)
+%     plot(time,data,'k');
+%     xlabel('Time (s)');
+%     title('Z detrended');
+%     xlim([min(time),max(time)]);
+%     subplot(nsp,1,4)
+%     plot(time,data,'k');
+%     xlabel('Time (s)');
+%     title('Z detrended zoom');
+%     xlim([min(time),10]);
+% end
+data = flat_hanning_win(1:length(data),data,1,length(data),500);
+%data = flat_hanning_win(1:length(data),data,1,length(data),5000);
+% if idx == 4
+%     subplot(nsp,1,5)
+%     plot(time,data,'k');
+%     xlabel('Time (s)');
+%     title('Z tapered');
+%     xlim([min(time),max(time)]);
+%     subplot(nsp,1,6)
+%     plot(time,data,'k');
+%     xlabel('Time (s)');
+%     title('Z tapered zoom');
+%     xlim([min(time),10]);
+% end
 
 N = intrace.sampleCount;
 delta = 1/intrace.sampleRate;
