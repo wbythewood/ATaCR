@@ -6,23 +6,13 @@
 % H. Janiszewski 
 % hjaniszewski@carnegiescience.edu
 % updated 11/17
+% W.B. Hawley updated to include paramter file
+% updated 02/20
 
-clear;
+clear; close all
+setup_parameter;
 
-javaaddpath('IRIS-WS-2.0.6.jar');
-
-startlist = 'NOISETC_CI/eventtimes_CItest.txt'; % list of start times for data download, this will be the beginning of the waveform so specify appropriately, signal of interest should not be at edges of time series
-datalength = 7200; % length of time series after each start time in seconds (default 7200, code not thoroughly tested for other values)
-
-download_networks = '7D'; % list of networks to download
-download_stations = textread('./NOISETC_CI/stalist.txt','%s'); % list of stations to download (* for all)
-% Channel Names
-chz_vec = 'BHZ'; % list of acceptable names for Z component
-ch1_vec = 'BH1'; % list of acceptable names for H1 component
-ch2_vec = 'BH2'; % list of acceptable names for H2 component
-chp_vec = 'BDH'; % list of acceptable names for P component
-
-datacache = 'NOISETC_CI/DATA/datacache'; % output folder for data
+datacache = EventDataDir; % output folder for data
 
 %%%%% end user input parameters %%%%%
 
@@ -30,8 +20,9 @@ if ~exist(datacache,'dir')
     mkdir(datacache)
 end
 
-startlist = textread(startlist,'%s');
-chanlist = sprintf('%s,%s,%s,%s',chz_vec,ch1_vec,ch2_vec,chp_vec);
+startlist = textread(evFile,'%s');
+chanlist = [chz_vec, ch1_vec, ch2_vec, chp_vec];
+chanlist = strjoin(chanlist,',');
 
 for id = 1:length(startlist)
    eventid = cell2mat(startlist(id));
@@ -43,9 +34,9 @@ for id = 1:length(startlist)
        eventid = eventid(1:12); % for naming purposes only, start time will still be saved to the second in traces file
    end
    starttime = datestr(otime,'yyyy-mm-dd HH:MM:SS');
-   endtime = datestr(otime+datalength/3600/24,'yyyy-mm-dd HH:MM:SS');
+   endtime = datestr(otime+EventDataLength/3600/24,'yyyy-mm-dd HH:MM:SS');
    
-   stations_info = irisFetch.Stations('channel',download_networks,download_stations,'*',chz_vec,'startTime',starttime,'endTime',endtime);
+   stations_info = irisFetch.Stations('channel',NetworkName,StationNames,'*',chz_vec,'startTime',starttime,'endTime',endtime);
    
    
    for ista =1:length(stations_info)

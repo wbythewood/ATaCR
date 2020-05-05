@@ -10,46 +10,36 @@
 % Each may be included or excluded depending on the needs of the user.
 % Make sure preprocessing steps for a given station 
 % HAJ July 2016
+% W.B. Hawley updated to include paramter file
+% updated 02/20
 
-addpath ('function');
-INPUTdir = 'NOISETC_CI/DATA/datacache/';
-OUTPUTdir = 'NOISETC_CI/DATA/datacache_prepro/';
 
-% pole_zero_dir='directory_where_SACPZ_files_are_here'; % for response removal if using sac PZ files
-pole_zero_dir=''; % if not using leave blank
+clear; close all
+setup_parameter;
 
-network = '7D';
-station = textread('./NOISETC_CI/stalist.txt','%s');;
-% channels = {'HHZ','HH1','HH2','HDH'};
-% channels = {'HXZ','HX1','HX2','HXH'};
-channels = {'BHZ','BH1','BH2','BDH'};
-% channels = {'HHZ','HH1','HH2','BDH'};
+INPUTdir = EventDataDir; %'../../data/datacache/';
+OUTPUTdir = EventPreproDir; %'../../data/datacache_prepro/';
+pole_zero_dir=PZDir; %''; % if not using leave blank
 
-% Example for case where no gain correction is applied and response is
-% removed from all channels
-%%%%
-resprm = [1 1 1 1]; % for each channel 1 means remove response, 0 means don't. Order matches channels vector
-gaincorr = [1 1 1 1]; % gain correction factor to multiply data by for each channel
-samprate = 5; % new sample rate for each channel (note: for tilt/comp package must all be equal)
-hp_filt = [0 0 0 0]; % apply high pass filter
+network = NetworkName; 
+stations = StationNames;
+channels = [chz_vec, ch1_vec, ch2_vec, chp_vec];
 
-% Example for case where gain correction is applied and response is only
-% removed from seismometer channels
-%%%%
-% resprm = [1 1 1 0]; % for each channel 1 means remove response, 0 means don't. Order matches channels vector
-% gaincorr = [2.37 2.37 2.37 2.37]; % gain correction factor to multiply data by for each channel
-% samprate = 5; % new sample rate for each channel (note: for tilt/comp package must all be equal)
-% hp_filt = [0 0 0 1]; % apply high pass filter
+RemoveResp = [chz_resp, ch1_resp, ch2_resp, chp_resp];
+GainCorr = [chz_gain, ch1_gain, ch2_gain, chp_gain];
+samprate = SampleRate;
+HiPassFilt = [chz_hpFilt, ch1_hpFilt, ch2_hpFilt, chp_hpFilt];
 
-% parameters for high pass for response removal
-lo_corner = 0.001;  % in Hz
-        npoles=5;
+npoles=5;
 
 %%%%% end user input parameters %%%%%
 
 if ~exist(OUTPUTdir)
     mkdir(OUTPUTdir);
 end
+
+figure(31); hold on; clf;
+
 
 % data_filenames = dir(fullfile(INPUTdir,network,station,'/',['*.mat']));
 data_filenames = dir(fullfile(INPUTdir));
@@ -92,27 +82,72 @@ for ista = 1:length(stations)
             chan_data = traces(idxch);
             rate = chan_data.sampleRate;
             dt = 1/rate;
+            % debug strange taper behavior
+            nsp = 2;
+             if idxch == 4
+                 subplot(nsp,1,1)
+                 t = (chan_data.sampleCount/chan_data.sampleRate);
+                 time = linspace(0,t,chan_data.sampleCount);
+                 data = chan_data.data;
+                 plot(time,data,'k');
+                 xlabel('Time (s)');
+                 title('Z raw');
+                 xlim([min(time),max(time)]);
+             end
+             
+            % try to do a really long-period high-pass to get rid of super
+            % long-period noise?
+            if FilterBeforeFlag == 1
+                fNyquist = 0.5 * chan_data.sampleRate;
+                FreqHiPass = 3600; %(s)
+                [B,a] = butter(2,1/FreqHiPass/fNyquist,'high');
+                chan_data.data = filtfilt(B,a,chan_data.data);
+            end
+%             if idxch == 4
+%                  subplot(nsp,1,2)
+%                  data = chan_data.data;
+%                  plot(time,data,'k');
+%                  xlabel('Time (s)');
+%                  title('Z hi-pass 3600s');
+%                  %title('same as above');
+%                  xlim([min(time),max(time)]);
+%              end
             %%%%%%%%%%%%%%%%%
             % REMOVE RESPONSE
             %%%%%%%%%%%%%%%%%
-            if resprm(ic) ==1
-                chan_data = rm_resp(chan_data,eventid,lo_corner,npoles,pole_zero_dir);
+            if RemoveResp(ic) ==1
+                %chan_data = rm_resp(chan_data,eventid,LoPassCorner,nPoles,pole_zero_dir);
+                chan_data = rm_resp(chan_data,eventid,LoPassCorner,nPoles,pole_zero_dir,idxch,nsp);
                 data_raw = chan_data.data_cor;
             else
                 data_raw = chan_data.data;
             end
+%             if idxch == 4
+%                  subplot(4,1,2)
+%                  plot(time,data_raw,'k');
+%                  xlabel('Time (s)');
+%                  title('Z Resp Removed');
+%                  xlim([min(time),max(time)]);
+%              end
             %%%%%%%%%%%%%%%%%
             % GAIN CORRECTION
             %%%%%%%%%%%%%%%%%
-            data_raw = gaincorr(ic).*data_raw;
+            data_raw = GainCorr(ic).*data_raw;
+%             if idxch == 4
+%                  subplot(4,1,3)
+%                  plot(time,data_raw,'k');
+%                  xlabel('Time (s)');
+%                  title('Z Gain Corr');
+%                  xlim([min(time),max(time)]);
+%              end
              %%%%%%%%%%%%%%%%%
             % HIGH PASS FILTER - should link this and the bit in rm_resp
             % function to a different function, so they are the same, but the
             % user can specify parameters easily
             %%%%%%%%%%%%%%%%%
-            if hp_filt(ic) ==1
+            if HiPassFilt(ic) ==1
             
-            lo_w=2*pi*lo_corner;
+            lo_w=2*pi*LoPassCorner;
             
             N = length(data_raw);
             delta = dt;
@@ -125,7 +160,7 @@ for ista = 1:length(stations)
             end
             w = faxis.*2*pi;
             
-            hpfiltfrq=( ((w./lo_w).^(2*npoles))./(1+(w./lo_w).^(2*npoles)) );
+            hpfiltfrq=( ((w./lo_w).^(2*nPoles))./(1+(w./lo_w).^(2*nPoles)) );
             norm_trans=hpfiltfrq;    % this is normalization transfer function
             norm_trans(find(isnan(norm_trans))) = 0;
             
@@ -133,6 +168,16 @@ for ista = 1:length(stations)
             fftdata = fftdata(:).*norm_trans(:);
             data_raw = real(ifft(fftdata));
             end
+            if idxch == 4
+                 subplot(nsp,1,nsp)
+                 %t = (chan_data.sampleCount/chan_data.sampleRate);
+                 %time = linspace(0,t,chan_data.sampleCount);
+                 %data_prepro = chan_data.data;
+                 plot(time,data_raw,'k');
+                 xlabel('Time (s)');
+                 title('Z Preprocessed');
+                 xlim([min(time),max(time)]);
+             end
             %%%%%%%%%%%%%%%%%
             % DOWNSAMPLING
             %%%%%%%%%%%%%%%%%
@@ -146,6 +191,8 @@ for ista = 1:length(stations)
             traces_new(idxch).data = data_raw;
             traces_new(idxch).sampleRate = samprate;
             traces_new(idxch).sampleCount = length(data_raw);
+            % debug strange taper behavior
+
         end % end channel loop
         %save good files
         if prob ==0
