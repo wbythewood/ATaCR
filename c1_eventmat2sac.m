@@ -11,7 +11,7 @@ clear;
 
 setup_parameter;
 
-inpath_uncorr = 'path/to/local/event/sac/files/';
+inpath_uncorr = '../../data/SAC/';
 corr_idx = 3;
 channel = 'BHZ';
 
