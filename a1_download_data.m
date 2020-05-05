@@ -35,7 +35,7 @@ startlist = textread(dayFile,'%s');
 for id = 1:length(startlist)
    eventid = cell2mat(startlist(id));
    fprintf('Start Time: %s\n',eventid);
-   otime = datenum(eventid,'yyyymmddHHMM'); 
+   otime = datenum(eventid,'yyyymmddHHMM');
    starttime = datestr(otime,'yyyy-mm-dd HH:MM:SS');
    endtime = datestr(otime+NoiseDataLength/3600/24,'yyyy-mm-dd HH:MM:SS');
 
@@ -93,12 +93,12 @@ for id = 1:length(startlist)
    end
    starttime = datestr(otime,'yyyy-mm-dd HH:MM:SS');
    endtime = datestr(otime+EventDataLength/3600/24,'yyyy-mm-dd HH:MM:SS');
-   
+
    stations_info = irisFetch.Stations('channel',NetworkName,StationNames,'*',chz_vec,'startTime',starttime,'endTime',endtime);
-   
-   
+
+
    for ista =1:length(stations_info)
-       disp([stations_info(ista)])
+       %disp([stations_info(ista)])
        error = 0;
        stnm = stations_info(ista).StationCode;
        network = stations_info(ista).NetworkCode;
@@ -112,17 +112,15 @@ for id = 1:length(startlist)
 %        end
        disp(['Downloading station: ',stnm,' From:',starttime,' To:',endtime]);
 		try
-            disp([network,stnm,chanlist,starttime,endtime])
-            
+            % disp([network,stnm,chanlist,starttime,endtime])
             traces = irisFetch.Traces(network,stnm,'*',chanlist,starttime,endtime,'includePZ');
-            disp(sta_filename)
             save(sta_filename,'traces');
 		catch e
             e.message;
             error = 1;
         end
         if error ==1
-            try % to try and get around the missing zeros for some pressure components                
+            try % to try and get around the missing zeros for some pressure components
                 traces = irisFetch.Traces(network,stnm,'*',chanlist,starttime,endtime);
                 save(sta_filename,'traces');
             catch e
@@ -131,5 +129,5 @@ for id = 1:length(startlist)
             end
         end
     end
-   
+
 end
