@@ -49,19 +49,23 @@ fn = 1/2/dt;
 [b,a]=butter(2,[1/fn/T2,1/fn/T1]);
 Z_filt  = filtfilt(b,a,Zraw);
 ZP21_filt  = filtfilt(b,a,corrseis(3).timeseries);
+ZP21_raw = corrseis(3).timeseries;
 
 % Zraw data
 subplot(3,1,2); box on;
-plot(taxis,Z_filt,'-k')
+%plot(taxis,Z_filt,'-k')
+plot(taxis,Zraw,'-k')
 xlabel('Time (s)');
 title('Z raw');
 xlim([min(taxis),max(taxis)]);
 
 % ZP-21 data
 subplot(3,1,3); box on;
-plot(taxis,ZP21_filt,'-k');
+%plot(taxis,ZP21_filt,'-k');
+plot(taxis,ZP21_raw,'-k');
 xlabel('Time (s)');
 title('ZP-21');
+title('ZP-21 raw');
 xlim([min(taxis),max(taxis)]);
 
 end
