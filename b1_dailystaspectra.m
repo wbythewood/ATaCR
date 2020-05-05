@@ -17,16 +17,18 @@ isoverwrite = 1; % overwrite spectra files
 % DO NOT EDIT BELOW
 setup_parameter;
 
-for ista = 1:length(stations)
-    station = stations{ista};
-    netsta = [network,station];
-    
+for ista = 1:length(StationNames)
+    station = StationNames{ista};
+    netsta = [NetworkName,station];
+
+    disp(['beginning for loop...',station,ista])
     outpath = sprintf('%s/SPECTRA/%s/',OUTdir,netsta);
     figoutpath=sprintf('%s/STATIONS_DAILY/',FIGdir);
     rotoutpath=sprintf('%s/STATIONS_ROTATION/',FIGdir);
 
     c = colormap('jet');
 
+    % create paths if they don't yet exist
     if ~exist(outpath)
         mkdir(outpath);
     end
@@ -39,30 +41,34 @@ for ista = 1:length(stations)
         mkdir(rotoutpath);
     end
 
+    
     disp(netsta);
-    filesuff = sprintf('*_%s_%s.mat',network,station);
-    day_filenames = dir(fullfile(WORKINGdir,network,station,'/',filesuff));
+    filesuff = sprintf('*_%s_%s.mat',NetworkName,station);
+    day_filenames = dir(fullfile(NoisePreproDir,NetworkName,station,'/',filesuff));
 
     hangs = [0:10:360]; 
     if isfigure_orient==1
         figure(90);clf
         figure(105);clf
+        figure(106);clf
+        figure(107);clf
     end
     for ie = 1 : length(day_filenames)
+        % initialize figures
         if isfigure_spectrogram == 1
         figure(96);clf
         end
         if isfigure_powerspec==1
         figure(1);clf
         end
-        day_data = load(fullfile(WORKINGdir,network, station ,'/',day_filenames(ie).name));
+        day_data = load(fullfile(NoisePreproDir,NetworkName, station ,'/',day_filenames(ie).name));
         traces_day = day_data.traces_day;
         dayid = day_filenames(ie).name(1:12);
         specfilename = sprintf('%s%s_%s_spectra.mat',outpath,netsta,dayid);
         if exist(specfilename,'file') && isoverwrite ==0
     			disp(['Exist: ',specfilename,', Skip!']);
     			continue;
-    		end
+    	end
         disp(dayid);
         
         idxZ = find(ismember({traces_day.channel},chz_vec));
@@ -201,7 +207,7 @@ for ista = 1:length(stations)
         % Save parameters in structure
         specprop.params.f = f;
         specprop.params.station = station;
-        specprop.params.network = network;
+        specprop.params.network = NetworkName;
         specprop.params.elev = elev;
         specprop.params.iptwin1 = iptwin1;
         specprop.params.iptwin2 = iptwin2;
@@ -242,9 +248,20 @@ for ista = 1:length(stations)
         caxis([0 365])
         colormap jet
         colorbar
+        %wbh
+%         subplot(223)
+%         caxis([0 365])
+%         colormap jet
+%         colorbar
+%         subplot(224)
+%         caxis([0 365])
+%         colormap jet
+%         colorbar
+        %wbh end
         set(gcf,'PaperPositionMode','manual');
         set(gcf,'PaperUnits','inches');
         set(gcf,'PaperOrientation','portrait');
+        %set(gcf,'PaperPosition',[.05 .05 8 7]);
         set(gcf,'PaperPosition',[.05 .05 8 3]);
         
         figure(105)
@@ -268,5 +285,17 @@ for ista = 1:length(stations)
         figure(90)
         filename=sprintf('%s/%s_orientationdir',rotoutpath,netsta);
         print(gcf,'-dpng',filename)
+        
+        figure(106)
+        set(gcf,'PaperPositionMode','manual');
+        set(gcf,'PaperUnits','inches');
+        set(gcf,'PaperOrientation','portrait');
+        set(gcf,'PaperPosition',[.05 .05 8 7]);
+        
+        figure(106)
+        filename=sprintf('%s/%s_PhaseInfo',rotoutpath,netsta);
+        print(gcf,'-dpng',filename)
+        
+        figure(107)
     end
 end % station loop
