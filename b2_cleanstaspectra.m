@@ -9,18 +9,18 @@ clear; close all
 % CODE OPTIONS 
 isfigure = 1;
 issavefigure = 1;
-isoverwrite = 0; % if set to 0, will skip previously processed files
+isoverwrite = 1; % if set to 0, will skip previously processed files
 
 % DO NOT EDIT BELOW
 setup_parameter;
-for ista = 1:length(stations)
+for ista = 1:length(StationNames)
     clear gooddays 
     clear czz_all cpp_all c11_all c22_all
     clear c12_all c1p_all c1z_all c2p_all c2z_all cpz_all
     clear spect spectsm coh_stack ph_stack ad_stack
     clear c12
-    station = stations{ista};
-    netsta = [network,station];
+    station = StationNames{ista};
+    netsta = [NetworkName,station];
     close all
     inpath = sprintf('%s/SPECTRA/%s/',OUTdir,netsta);
     figoutpath=sprintf('%s/STATIONS_NOISEPROP/',FIGdir);
