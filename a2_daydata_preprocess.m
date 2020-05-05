@@ -58,7 +58,7 @@ for ista = 1:length(stations)
         traces_day_new = traces_day;
         dayid = data_filenames(ie).name(1:12);
         prob=0;
-        
+
         for ic = 1:length(channels) % begin channel loop
             chan = channels(ic);
             idxch = find(ismember({traces_day.channel},chan));
@@ -104,24 +104,24 @@ for ista = 1:length(stations)
             % user can specify parameters easily
             %%%%%%%%%%%%%%%%%
             if HiPassFilt(ic) == 1
-                
+
                 lo_w=2*pi*LoPassCorner;
-                
+
                 N = length(data_raw);
                 delta = dt;
                 Tr = N*delta;
-                
+
                 if mod(N,2)
                     faxis = [0:(N-1)/2,-(N-1)/2:-1]*(1/Tr);
                 else
                     faxis = [0:N/2,-N/2+1:-1]*(1/Tr);
                 end
                 w = faxis.*2*pi;
-                
+
                 hpfiltfrq=( ((w./lo_w).^(2*nPoles))./(1+(w./lo_w).^(2*nPoles)) );
                 norm_trans=hpfiltfrq;    % this is normalization transfer function
                 norm_trans(find(isnan(norm_trans))) = 0;
-                
+
                 fftdata = fft(data_raw);
                 fftdata = fftdata(:).*norm_trans(:);
                 data_raw = real(ifft(fftdata));
@@ -135,7 +135,7 @@ for ista = 1:length(stations)
                 dt_new = 1/samprate;
                 [data_raw,taxis] = resample(data_raw,dt_new,dt);
             end
-            
+
             traces_day_new(idxch).data = data_raw;
             traces_day_new(idxch).sampleRate = samprate;
             traces_day_new(idxch).sampleCount = length(data_raw);
@@ -203,7 +203,7 @@ for ista = 1:length(stations)
                  title('Z raw');
                  xlim([min(time),max(time)]);
              end
-             
+
             % try to do a really long-period high-pass to get rid of super
             % long-period noise?
             if FilterBeforeFlag == 1
@@ -255,24 +255,24 @@ for ista = 1:length(stations)
             % user can specify parameters easily
             %%%%%%%%%%%%%%%%%
             if HiPassFilt(ic) ==1
-            
+
             lo_w=2*pi*LoPassCorner;
-            
+
             N = length(data_raw);
             delta = dt;
             Tr = N*delta;
-            
+
             if mod(N,2)
                 faxis = [0:(N-1)/2,-(N-1)/2:-1]*(1/Tr);
             else
                 faxis = [0:N/2,-N/2+1:-1]*(1/Tr);
             end
             w = faxis.*2*pi;
-            
+
             hpfiltfrq=( ((w./lo_w).^(2*nPoles))./(1+(w./lo_w).^(2*nPoles)) );
             norm_trans=hpfiltfrq;    % this is normalization transfer function
             norm_trans(find(isnan(norm_trans))) = 0;
-            
+
             fftdata = fft(data_raw);
             fftdata = fftdata(:).*norm_trans(:);
             data_raw = real(ifft(fftdata));
@@ -296,7 +296,7 @@ for ista = 1:length(stations)
                 dt_new = 1/samprate;
                 [data_raw,taxis] = resample(data_raw,dt_new,dt);
             end
-            
+
             traces_new(idxch).data = data_raw;
             traces_new(idxch).sampleRate = samprate;
             traces_new(idxch).sampleCount = length(data_raw);
@@ -309,6 +309,6 @@ for ista = 1:length(stations)
             filename = fullfile(EventPreproDir,eventid,'/',station_filenames(is).name);
             save(filename,'traces');
         end
-        end   
+        end
     end % end file loop
 end % end station loop
