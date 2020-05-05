@@ -16,8 +16,8 @@ if comp_exist ==1
         end
         
         amp_C  = datraw(pts_begin:pts_end);
+        amp_C  = detrend(amp_C);
         amp_C  = amp_C.*flat_hanning(taxisC(pts_begin:pts_end),overlap*dt*npts);
-        amp_C  = detrend(amp_C,0);
         amp_C  = padarray(amp_C,[npad0 0],'both');
         spectrum = fft(amp_C,NFFT).*dt;
         spec_C = spectrum(1:NFFT/2+1);
