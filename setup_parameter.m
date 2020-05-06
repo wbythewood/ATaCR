@@ -7,7 +7,10 @@ javaaddpath('IRIS-WS-2.0.18.jar');
 %--- Directory Structure ---%
 
 %Base Directory for Output
-BaseDir = 'X9_test2D/';%''X9_M6.5';
+BaseDir = '/Users/whawley/Research/github/Blanco-SW/';
+DataDir = strcat(BaseDir,'data/');
+
+% If Downloading using MATLAB code...
 % location of unpreprocessed matlab files
 NoiseDataDir = strcat(BaseDir,'data/noise_day/'); % output folder for data
 % location of the continuous matlab files for spectral properties
@@ -19,14 +22,21 @@ EventPreproDir = strcat(BaseDir,'data/event_data_prepro/');
 % location of pole zero directory
 PZDir = ''; % leave blank if no PZs
 %PZDir = strcat(BaseDir,'data/PZDir');
+
+% If already downloaded using SAC...
+% location of SAC noise files
+sacDayData = strcat(DataDir,'SAC_Noise/');
+% location of SAC event files
+sacEventData = strcat(DataDir,'SAC_Events/');
+
 % output directory for spectra
 OUTdir = strcat(BaseDir,'data/NOISETC/');
 % directory for figure output
 FIGdir = strcat(BaseDir,'figures/');
 
 % paths for the event and noise time lists
-evFile = 'config_files/eventtimes_X9test2.txt';
-dayFile = 'config_files/starttimes_X9test2.txt';
+evFile = strcat(BaseDir,'config/EventsTest.txt');
+dayFile = strcat(BaseDir,'config/DayNoiseTest.txt');
 
 
 %evFile = 'config_files/Events_X9_M6.5.txt';
@@ -40,14 +50,14 @@ NetworkName = 'X9';
 % stations
 %StationNames = {'M07A'};
 %StationNames = {'*'};
-StationNames = textread('config_files/X9_D_stations.txt','%s');
+StationNames = textread(strcat(BaseDir,'config/X9_stations.txt'),'%s');
 
 % Response Removal
-% option of removing response from Z component only after corrections have 
-% been applied -- 0 is do not remove response after, 1 is remove response 
+% option of removing response from Z component only after corrections have
+% been applied -- 0 is do not remove response after, 1 is remove response
 % after correcting
 
-RespAfterFlag = 1;
+RespAfterFlag = 0;
 
 % Pre-processing high-pass filter
 % this will apply a high pass filter to the raw data
@@ -82,26 +92,26 @@ ch2_resp = [1];
 ch2_gain = [1];
 ch2_hpFilt = [0];
 
-%chp_vec = {'BXH'};  
+%chp_vec = {'BXH'};
 chp_vec = {'BDH'};
 chp_resp = [1];
 chp_gain = [1];
 chp_hpFilt = [0];
 
-% if removing response after, don't need to remove resp before... 
+% if removing response after, don't need to remove resp before...
 if RespAfterFlag == 0
     chz_resp = zeros(size(chz_resp));
     ch1_resp = zeros(size(ch1_resp));
     ch2_resp = zeros(size(ch2_resp));
     chp_resp = zeros(size(chp_resp));
-end  
+end
 
 % Timing Info
 % number of noise days to use for calculating spectra
 Ndays = 4;
 % length of record (seconds) for data download
 NoiseDataLength = 86400;
-EventDataLength = 7200;
+EventDataLength = 6000;
 
 %--- Preprocessing ---%
 
@@ -114,12 +124,13 @@ nPoles = 5;
 %--- Downloading Specrtral Properties ---%
 
 % Spectral Properties Windowing
-% the legnth of each time window, in sec, should match the event data 
+% the legnth of each time window, in sec, should match the event data
 % length for corrections
-T    = 7200; 
+T    = 7200;
+T    = 6000;
 
 % fraction of window overlap for spectra calculation
-overlap = 0.3; 
+overlap = 0.3;
 
 % Quality Control Parameters for Daily Windows
 pb = [0.004 .2]; % pass-band, in Hz
